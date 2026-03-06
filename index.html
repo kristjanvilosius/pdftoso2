@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDF → Sales Order | Katana MRP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- Screen 1: Password Gate                                                -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <div id="screen-auth" class="screen active">
+    <div class="auth-container">
+      <div class="auth-card">
+        <div class="logo">Katana<span>MRP</span></div>
+        <div class="auth-badge">PDF → Sales Order</div>
+        <p class="auth-subtitle">Upload a PDF invoice or sales order and convert it to a Katana Sales Order with AI.</p>
+        <div class="auth-form">
+          <input type="password" id="password-input" class="input" placeholder="Enter password" autocomplete="off">
+          <button class="btn btn-primary btn-lg" id="btn-auth">Unlock</button>
+        </div>
+        <div id="auth-error" class="error-msg hidden"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- Screen 2: Upload PDF + API Key                                         -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <div id="screen-upload" class="screen">
+    <header class="header">
+      <div class="header-left">
+        <div class="logo">Katana<span>MRP</span></div>
+        <div class="header-badge">PDF → Sales Order</div>
+      </div>
+    </header>
+    <main class="main-content">
+      <div class="upload-card">
+        <h2 class="section-title">Upload Document</h2>
+        <div class="drop-zone" id="drop-zone">
+          <div class="drop-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="12" y1="18" x2="12" y2="12"/>
+              <polyline points="9 15 12 12 15 15"/>
+            </svg>
+          </div>
+          <p class="drop-text">Drop a PDF here or <span class="drop-link">click to browse</span></p>
+          <p class="drop-hint">Supports invoices, purchase orders, and sales orders</p>
+          <input type="file" id="file-input" accept=".pdf" hidden>
+        </div>
+        <div id="file-preview" class="file-preview hidden">
+          <div class="file-info">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span id="file-name"></span>
+            <span id="file-size" class="text-muted"></span>
+          </div>
+          <button class="btn-icon" id="btn-remove-file" title="Remove file">&times;</button>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Anthropic API Key</label>
+          <input type="text" id="anthropic-key" class="input" placeholder="sk-ant-api03-...">
+          <p class="field-hint">Used for AI-powered PDF parsing</p>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Katana API Key</label>
+          <input type="text" id="katana-key" class="input" placeholder="e.g., 140bac1a-d4b5-4293-a299-c3f32536fd8a">
+          <p class="field-hint">Find your API key in Katana → Settings → API</p>
+        </div>
+
+        <button class="btn btn-primary btn-lg btn-full" id="btn-parse" disabled>
+          <span class="btn-icon-left">&#10022;</span> Parse with AI
+        </button>
+      </div>
+    </main>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- Screen 3: Review & Edit                                                -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <div id="screen-review" class="screen">
+    <header class="header">
+      <div class="header-left">
+        <div class="logo">Katana<span>MRP</span></div>
+        <div class="header-badge">PDF → Sales Order</div>
+      </div>
+      <div class="header-right">
+        <span class="header-step">Review &amp; Edit</span>
+      </div>
+    </header>
+    <main class="main-content">
+      <!-- Customer & Order Info -->
+      <div class="review-section">
+        <h3 class="section-title">Customer &amp; Order Info</h3>
+        <div class="field-grid">
+          <div class="field-group">
+            <label class="field-label">Customer Name <span class="required">*</span></label>
+            <input type="text" id="field-customer" class="input" placeholder="Company or person name">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Reference / PO Number</label>
+            <input type="text" id="field-reference" class="input" placeholder="e.g., PO-2026-042">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Order Date</label>
+            <input type="date" id="field-order-date" class="input">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Delivery Date</label>
+            <input type="date" id="field-delivery-date" class="input">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Currency</label>
+            <select id="field-currency" class="input">
+              <option value="EUR">EUR</option>
+              <option value="USD">USD</option>
+              <option value="GBP">GBP</option>
+              <option value="SEK">SEK</option>
+              <option value="NOK">NOK</option>
+              <option value="DKK">DKK</option>
+              <option value="CAD">CAD</option>
+              <option value="AUD">AUD</option>
+            </select>
+          </div>
+          <div class="field-group field-full">
+            <label class="field-label">Notes</label>
+            <textarea id="field-notes" class="input textarea" rows="2" placeholder="Special instructions, shipping notes..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Line Items -->
+      <div class="review-section">
+        <div class="section-header">
+          <h3 class="section-title">Line Items</h3>
+          <button class="btn btn-outline btn-sm" id="btn-add-row">+ Add Row</button>
+        </div>
+        <div class="table-wrapper">
+          <table class="items-table" id="line-items-table">
+            <thead>
+              <tr>
+                <th class="col-num">#</th>
+                <th class="col-product">Product Name</th>
+                <th class="col-sku">SKU</th>
+                <th class="col-qty">Qty</th>
+                <th class="col-price">Unit Price</th>
+                <th class="col-match">Variant Match</th>
+                <th class="col-actions"></th>
+              </tr>
+            </thead>
+            <tbody id="line-items-body">
+              <!-- Rows populated by JS -->
+            </tbody>
+          </table>
+        </div>
+        <div id="match-summary" class="match-summary hidden"></div>
+      </div>
+
+      <!-- Actions -->
+      <div class="review-actions">
+        <button class="btn btn-outline" id="btn-back-upload">&#8592; Upload Another</button>
+        <button class="btn btn-success btn-lg" id="btn-create-so" disabled>
+          Create Sales Order &#8594;
+        </button>
+      </div>
+    </main>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- Screen 4: Success                                                      -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <div id="screen-success" class="screen">
+    <div class="success-container">
+      <div class="success-card">
+        <div class="success-check">
+          <svg viewBox="0 0 52 52" class="checkmark">
+            <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+            <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+          </svg>
+        </div>
+        <h2 class="success-title">Sales Order Created!</h2>
+        <div id="success-details" class="success-details"></div>
+        <div class="success-actions">
+          <button class="btn btn-primary btn-lg" id="btn-upload-another">Upload Another PDF</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- Loading Overlay                                                        -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <div id="loading-overlay" class="loading-overlay hidden">
+    <div class="loading-card">
+      <div class="spinner"></div>
+      <div id="loading-text" class="loading-text">Processing...</div>
+      <div id="loading-steps" class="loading-steps"></div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
